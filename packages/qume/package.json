@@ -1,0 +1,35 @@
+{
+  "name": "qume",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "main": "./dist/index.js",
+  "source": "./src/index.ts",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
+    "dev": "tsc -w",
+    "lint": "eslint \"src/**/*.ts*\"",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-presets/jest/node"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "type-fest": "^4.23.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.1.0",
+    "@types/lodash": "^4.17.0",
+    "eslint": "^7.32.0",
+    "eslint-config-custom": "*",
+    "jest": "^29.1.0",
+    "jest-presets": "*",
+    "tsconfig": "*",
+    "typescript": "5.8.3"
+  }
+}

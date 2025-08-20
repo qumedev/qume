@@ -1,0 +1,108 @@
+// import scala.deriving.Mirror
+//
+// object TodoEvents:
+//   val CREATE_TODO = "CREATE_TODO"
+//   val TODO_CREATED = "TODO_CREATED"
+//   val TODO_ACTIVATED = "TODO_ACTIVATED"
+//   val TODO_COMPLETED = "TODO_COMPLETED"
+//
+// import TodoEvents.*
+//
+// case class CreateTodo(title: String)
+// case class TodoCreated(id: String, title: String)
+// case class TodoActivated(id: String)
+// case class TodoCompleted(id: String)
+//
+// type TodoFact = CreateTodo | TodoCreated | TodoActivated | TodoCompleted
+//
+// case class QueryBuilder[A](value: A):
+//   def withUniqueId: QueryBuilder[A] = this
+//   def publish(outEvent: String): QueryBuilder[A] = this
+//   def byId: QueryBuilder[A] = this
+//   def map[B](f: A => B): QueryBuilder[B] = QueryBuilder(f(value))
+//   def as[B](b: B): QueryBuilder[B] = QueryBuilder(b)
+//
+// type Query[A] = QueryBuilder[A]
+//
+// trait EventType[E <: String]:
+//   type Out
+//   type Args = Tuple
+//   def apply(
+//       using
+//       m: Mirror.ProductOf[Out]
+//     ): Args => Out = m.fromProduct
+//
+// given EventType[TODO_CREATED.type] with
+//   type Out = TodoCreated
+//
+// given EventType[CREATE_TODO.type] with
+//   type Out = CreateTodo
+//
+// given EventType[TODO_ACTIVATED.type] with
+//   type Out = TodoActivated
+//
+// given EventType[TODO_COMPLETED.type] with
+//   type Out = TodoCompleted
+//
+// def event[E <: String](
+//     using
+//     et: EventType[E],
+//     m: Mirror.ProductOf[et.Out],
+//   ): et.Args => et.Out = et.apply
+//
+// def query[E <: String](
+//     using
+//     e: EventType[E]
+//   ): Query[e.Out] =
+//   QueryBuilder(??? : e.Out)
+//
+// case class JoinedTodoItem(
+//     id: Query[String] = query[TODO_CREATED.type].byId.map(_.id),
+//     title: Query[String] = query[TODO_CREATED.type].byId.map(_.title),
+//     active: Query[Boolean] = query[TODO_CREATED.type].byId.as(true),
+//   )
+//
+// case class TodoStore(
+//     created: Query[CreateTodo] = query[CREATE_TODO.type].withUniqueId.publish(TODO_CREATED),
+//     all: JoinedTodoItem = JoinedTodoItem(),
+//   ):
+//   def getById(id: String): Option[TodoItem] = ???
+//   def getActive(): List[TodoItem] = ???
+//
+// case class TodoItem(
+//     id: String,
+//     title: String,
+//     active: Boolean,
+//   )
+//
+// def join[A]: A = ??? : A
+// def store[A]: A = ??? : A
+// def runMain[A](store: A): A = store
+//
+// // Usage
+// val todoStore = store[TodoStore]
+//
+// def useListener[A](a: A): A = a
+// def usePublisher[A]: A => Unit = _ => ()
+//
+// def TodoList() = {
+//   val all = useListener(todoStore.all)
+//   val publish = usePublisher[TodoFact]
+//
+//   // val activeOnly = all
+//   //   .filter(_.active)
+//   //   .map(_.title)
+//
+//   // Now using Tuple1 for single arguments
+//   publish(event[CREATE_TODO.type](Tuple1("new todo")))
+//
+//   // activeOnly
+// }
+//
+// // Examples
+// val todoCreated = event[TODO_CREATED.type](("123", "My Todo"))
+// val createTodo = event[CREATE_TODO.type](Tuple1("New Todo"))
+//
+// val example = query[TODO_CREATED.type]
+//   .map(todo => todo.title)
+//

@@ -1,0 +1,23 @@
+{
+  "name": "qume-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/test/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.5"
+  },
+  "packageManager": "yarn@4.9.2",
+  "repository": "git@github-qume:qumedev/qume.git",
+  "author": "qumedev <queryme.dev@gmail.com>",
+  "license": "Apache-2.0"
+}
