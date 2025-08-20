@@ -144,8 +144,63 @@ export type QueryRecord<R> = { [K in keyof R]: Record<string, UnwrapValue<R[K]>>
 
 
 
+/**
+ * Creates a type-safe scope for building reactive event-driven queries and actions.
+ * This is the main entry point for creating qume stores with strong TypeScript support.
+ * 
+ * @template S - Union type of all events in your system, must extend HasType (have a 'type' field)
+ * @returns Object containing query(), join(), action(), never(), store(), and runMain() functions
+ * 
+ * @example
+ * // Complete todo app setup with type safety
+ * type TodoEvent = 
+ *   | { type: 'TODO_CREATED', id: string, title: string }
+ *   | { type: 'TODO_COMPLETED', id: string }
+ * 
+ * const { query, action, store, runMain } = scope<TodoEvent>()
+ * 
+ * const todoStore = store({
+ *   create: action((title: string) => ({ 
+ *     type: 'TODO_CREATED', 
+ *     id: Math.random().toString(36), 
+ *     title 
+ *   })),
+ *   complete: action((id: string) => ({ type: 'TODO_COMPLETED', id })),
+ *   
+ *   todos: query('TODO_CREATED').by.id,
+ *   activeTodos: query('TODO_CREATED')
+ *     .by.id
+ *     .join(query('TODO_COMPLETED').by.id.optional())
+ *     .map(([todo, completion]) => completion ? undefined : todo)
+ * })
+ * 
+ * const main = runMain({ todoStore })
+ */
 export function scope<S extends HasType>() {
 
+  /**
+   * Creates a QueryTail that filters events by type or combines multiple QueryTails.
+   * This is the primary function for building reactive data queries.
+   * 
+   * @param arg1 - Event type string to filter by, or QueryTail to combine
+   * @param arg2 - Optional second event type or QueryTail to merge
+   * @param arg3 - Optional third event type or QueryTail to merge  
+   * @param arg4 - Optional fourth event type or QueryTail to merge
+   * @returns QueryTail that represents the filtered/combined event stream
+   * 
+   * @example
+   * // Build complex active todos query with chaining
+   * const activeTodosQuery = query('TODO_CREATED')
+   *   .by.id                           // Group by id field
+   *   .join(                           // Join with completion events
+   *     query('TODO_COMPLETED')
+   *       .by.id
+   *       .optional()                  // Make join optional
+   *   )
+   *   .map(([todo, completion]) =>     // Transform the joined data
+   *     completion ? undefined : todo  // Hide completed todos
+   *   )
+   */
   function query<I, K, R extends QueryObj<S, R>>(
     arg1: string | QueryTail<S, I, K, any>,
     arg2?: string | QueryTail<S, I, K, any>,
@@ -172,10 +227,46 @@ export function scope<S extends HasType>() {
     }
   }
 
+  /**
+   * Creates a QueryTail that joins multiple queries by their keys, emitting tuples when all dependencies are satisfied.
+   * This is useful for combining data from different event streams into a single coherent view.
+   * 
+   * @param obj - Object where each property is a QueryTail to join
+   * @returns QueryTail that emits objects with the same keys as input, but with tuple values
+   * 
+   * @example
+   * // Join multiple optional data sources for enriched todos
+   * const enrichedTodo = join({
+   *   todo: query('TODO_CREATED').by.id,
+   *   assignee: query('TODO_ASSIGNED').by.todoId.optional(),
+   *   comments: query('COMMENT_ADDED').by.todoId.optional(),
+   *   priority: query('TODO_PRIORITIZED').by.todoId.optional()
+   * })
+   */
   const join: JoinStoreFunc<S> = obj => QueryTailImpl.make(
     joinETF(_.mapValues(obj, v => v.etf) as any) as any
   )
 
+  /**
+   * Creates an action that can be triggered to emit events into the system.
+   * Actions are the primary way to introduce new events and drive state changes.
+   * 
+   * @param f - Optional function that transforms input parameters into an event
+   * @returns QueryTail representing the action that can be triggered
+   * 
+   * @example
+   * // Action with async processing and error handling
+   * const saveTodo = action((todo: Todo) => todo)
+   *   .evalMap(async (todo) => {
+   *     try {
+   *       const savedTodo = await api.saveTodo(todo)
+   *       return { type: 'TODO_SAVED', todo: savedTodo }
+   *     } catch (error) {
+   *       return { type: 'TODO_SAVE_FAILED', todoId: todo.id, error: error.message }
+   *     }
+   *   })
+   *   .internal()
+   */
   const action = (f?: (...args: any[]) => any) =>
     QueryTailImpl.make(
       mapETF(askETF<S, any>([ActionSymbol]), v => f && f(...v.value)),
@@ -185,9 +276,55 @@ export function scope<S extends HasType>() {
       true
     )
 
-
+  /**
+   * Creates a QueryTail that never emits any values. Useful as a placeholder or for conditional logic.
+   * 
+   * @template K - Key type
+   * @template A - Value type  
+   * @returns QueryTail that never produces any values
+   * 
+   * @example
+   * // Conditional query based on feature flag
+   * const conditionalQuery = featureEnabled 
+   *   ? query('FEATURE_EVENT').by.id
+   *   : never()
+   */
   const never = <K, A>() => QueryTailImpl.make(neverETF<S, K, A>())
 
+  /**
+   * Creates a store object that combines queries and actions into a cohesive state management unit.
+   * Stores are the main building blocks for organizing related functionality in qume applications.
+   * 
+   * @param arg1 - First store object or QueryObj to merge
+   * @param arg2 - Optional second store object to merge
+   * @param arg3 - Optional third store object to merge
+   * @returns Combined QueryObj representing the complete store
+   * 
+   * @example
+   * // Complete todo store with async operations and loading states
+   * const todoStore = store({
+   *   // Actions
+   *   create: action((title: string) => ({
+   *     type: 'TODO_CREATED',
+   *     id: crypto.randomUUID(),
+   *     title
+   *   })),
+   *   
+   *   fetchUser: action((userId: string) => ({ type: 'FETCH_USER_REQUESTED', userId }))
+   *     .evalMap(async ({ userId }) => {
+   *       const user = await api.getUser(userId)
+   *       return { type: 'USER_FETCHED', userId, user }
+   *     })
+   *     .internal(),
+   *   
+   *   // Queries
+   *   todos: query('TODO_CREATED').by.id,
+   *   users: query('USER_FETCHED').by.userId.select.user,
+   *   loadingUsers: query('FETCH_USER_REQUESTED').by.userId.as(true)
+   *     .join(query('USER_FETCHED').by.userId.optional())
+   *     .map(([loading, finished]) => !finished)
+   * })
+   */
   function store<I, R extends QueryObj<S, R>>(
     arg1: QueryObj<S, any> | R,
     arg2: QueryObj<S, any> | R,

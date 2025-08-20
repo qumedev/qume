@@ -1,19 +1,40 @@
 {
   "name": "qume",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "Event-sourced reactive state management library with fact-based architecture",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/qumedev/qume#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qumedev/qume.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qumedev/qume/issues"
+  },
+  "keywords": [
+    "state-management",
+    "reactive",
+    "event-sourcing",
+    "facts",
+    "typescript",
+    "react"
+  ],
   "main": "./dist/index.js",
   "source": "./src/index.ts",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist/**"
+    "dist/**",
+    "README.md",
+    "CLAUDE.md",
+    "docs/**"
   ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
     "dev": "tsc -w",
     "lint": "eslint \"src/**/*.ts*\"",
-    "test": "jest"
+    "test": "jest",
+    "publish": "yarn build && yarn config set npmAuthToken $NPM_TOKEN && yarn npm publish --access public"
   },
   "jest": {
     "preset": "jest-presets/jest/node"
@@ -24,7 +45,8 @@
   },
   "devDependencies": {
     "@types/jest": "^29.1.0",
-    "@types/lodash": "^4.17.0",
+    "@types/lodash": "^4.17.20",
+    "@types/node": "^24.3.0",
     "eslint": "^7.32.0",
     "eslint-config-custom": "*",
     "jest": "^29.1.0",

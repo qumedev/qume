@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
     "lib": [
-      "ES2022"
+      "ES2022",
+      "DOM"
     ],
     "module": "CommonJS",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "types": ["node", "jest"]
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "src/__tests__"
   ],
   "extends": "tsconfig/base.json",
   "include": [

@@ -1,6 +1,6 @@
 {
   "name": "qume-monorepo",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -11,7 +11,10 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "publish": "yarn publish:qume && yarn publish:qume-react",
+    "publish:qume": "cd packages/qume && yarn publish",
+    "publish:qume-react": "cd packages/qume-react && yarn publish"
   },
   "devDependencies": {
     "turbo": "^2.5.5"
