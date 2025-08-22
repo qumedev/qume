@@ -44,10 +44,11 @@ const todoStore = store({
   complete: action(id => ({ type: 'TODO_COMPLETED', id })),
   
   todos: query('TODO_CREATED').by.id,
-  active: query('TODO_CREATED')
-    .by.id
-    .join(query('TODO_COMPLETED').by.id)
-    .map(([todo]) => todo)
+    // shows only todos that haven't been completed yet
+  active: join({
+    created: query('TODO_CREATED').by.id,
+    completed: query('TODO_COMPLETED').by.id.optional()
+  }).filter(({ completed }) => !completed).select.created
 })
 
 // Use in React
